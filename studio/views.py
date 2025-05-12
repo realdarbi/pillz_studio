@@ -145,55 +145,122 @@ def custom_logout(request):
     messages.success(request, "Вы успешно вышли из системы")
     return redirect(reverse('login'))
 
-@login_required
-def profile(request):
-   
-    user_bookings = Booking.objects.filter(client=request.user).order_by('-date')
-    user_services = Service.objects.filter(client=request.user).order_by('-date_ordered')
-    
-    return render(request, 'studio/profile.html', {
-        'user': request.user,
-        'services': user_services,
-        'bookings': user_bookings
-    })
 
+
+
+# Добавляем новые импорты в начало файла
+from .forms import (
+    RecordingServiceForm, MixingServiceForm, 
+    InstrumentalServiceForm, LyricsServiceForm,
+    FullSongServiceForm, CreateServiceForm
+)
+from .models import (
+    RecordingServiceParams, MixingServiceParams,
+    InstrumentalServiceParams, LyricsServiceParams,
+    FullSongServiceParams
+)
+
+# Обновляем service_detail view
 @login_required
 def service_detail(request, pk):
+    service_type = get_object_or_404(ServiceType, pk=pk)
     
-    service = get_object_or_404(ServiceType, pk=pk)
+    # Определяем какая форма нужна для этого типа услуги
+    form_mapping = {
+        'recording': RecordingServiceForm,
+        'mixing': MixingServiceForm,
+        'instrumental': InstrumentalServiceForm,
+        'lyrics': LyricsServiceForm,
+        'full_song': FullSongServiceForm,
+    }
+    
+    params_form_class = form_mapping.get(service_type.category)
     
     if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.client = request.user
-            booking.service_type = service
-            booking.status = 'pending'
-            
-            if booking.date < timezone.now():
-                messages.error(request, "Нельзя записаться на прошедшую дату")
-            else:
-                try:
-                    booking.save()
-                    messages.success(request, f"Вы успешно записались на {service.name}!")
-                    return redirect('profile')
-                except Exception as e:
-                    messages.error(request, f"Ошибка при записи: {str(e)}")
+        # Убрали service_form, так как нам не нужно выбирать тип услуги
+        params_form = params_form_class(request.POST, request.FILES)
+        
+        if params_form.is_valid():
+            try:
+                # Создаем услугу напрямую, без формы
+                service = Service(
+                    client=request.user,
+                    service_type=service_type,
+                    status='pending',
+                    price=service_type.min_price,  # Базовая цена
+                    date_ordered=timezone.now()
+                )
+                
+                # Рассчитываем цену (упрощенный пример)
+                cleaned_data = params_form.cleaned_data
+                
+                if service_type.category == 'recording':
+                    if cleaned_data['hours'] >= 3 and not cleaned_data['unknown_hours']:
+                        service.price += 500 * cleaned_data['hours']
+                    if not cleaned_data['sound_engineer']:
+                        service.price -= 200
+                
+                service.save()
+                
+                # Создаем параметры услуги
+                params = params_form.save(commit=False)
+                params.service = service
+                params.save()
+                
+                messages.success(request, f"Заявка на {service_type.name} создана!")
+                return redirect('profile')
+                
+            except Exception as e:
+                logger.error(f"Service creation error: {str(e)}")
+                messages.error(request, f"Ошибка: {str(e)}")
     else:
-        form = BookingForm(initial={
-            'service_type': service,
-            'date': timezone.now() + timezone.timedelta(days=1)
+        params_form = params_form_class()
+    
+    context = {
+        'service': service_type,
+        'params_form': params_form,
+        'now': timezone.now().strftime("%Y-%m-%d")
+    }
+    
+    return render(request, f'studio/service_{service_type.category}.html', context)
+
+# Удаляем старую BookingForm (если больше не используется)
+# Или оставляем для других целей
+
+# Обновляем profile view для отображения параметров услуг
+@login_required
+def profile(request):
+    user_services = Service.objects.filter(client=request.user).order_by('-date_ordered')
+    
+    # Собираем параметры для каждого сервиса
+    services_data = []
+    for service in user_services:
+        params = None
+        if hasattr(service, 'recording_params'):
+            params = service.recording_params
+        elif hasattr(service, 'mixing_params'):
+            params = service.mixing_params
+        # Аналогично для других типов...
+        
+        services_data.append({
+            'service': service,
+            'params': params
         })
     
-    return render(request, 'studio/service_detail.html', {
-        'service': service,
-        'form': form,
-        'now': timezone.now().strftime("%Y-%m-%d")
+    return render(request, 'studio/profile.html', {
+        'services': services_data,
+        'bookings': Booking.objects.filter(client=request.user).order_by('-date')
     })
 
 def home(request):
+    # Порядок категорий для сортировки
+    CATEGORY_ORDER = ['recording', 'mixing', 'instrumental', 'lyrics', 'full_song']
     
-    services = ServiceType.objects.filter(is_active=True)[:5]
+    services = sorted(
+        ServiceType.objects.filter(is_active=True),
+        key=lambda x: CATEGORY_ORDER.index(x.category)
+    )[:5]
+    
     return render(request, 'studio/home.html', {
         'services': services,
         'title': 'Главная',

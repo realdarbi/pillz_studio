@@ -1,0 +1,34 @@
+﻿{% extends 'studio/service_base.html' %}
+
+{% block service_params %}
+<div class="mixing-params">
+    <div class="file-uploads">
+        <div class="upload-group">
+            {{ params_form.zip_file.label_tag }}
+            {{ params_form.zip_file }}
+            <small>Загрузите архив с треками (ZIP/RAR)</small>
+        </div>
+
+        <div class="upload-group">
+            {{ params_form.references.label_tag }}
+            {{ params_form.references }}
+            <small>До 5 файлов</small>
+        </div>
+    </div>
+
+    <div class="options">
+        <label class="option-checkbox">
+            {{ params_form.express }}
+            <span>{{ params_form.express.label }}</span>
+        </label>
+
+        <label class="option-checkbox">
+            {{ params_form.mastering }}
+            <span>{{ params_form.mastering.label }}</span>
+        </label>
+    </div>
+
+    {{ params_form.deadline.label_tag }}
+    {{ params_form.deadline }}
+</div>
+{% endblock %}

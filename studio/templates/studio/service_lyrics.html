@@ -1,0 +1,18 @@
+﻿{% extends 'studio/service_base.html' %}
+
+{% block service_params %}
+<div class="lyrics-params">
+    <div class="upload-group">
+        {{ params_form.references.label_tag }}
+        {{ params_form.references }}
+        <small>Загрузите текстовые файлы или аудио (до 5 файлов)</small>
+    </div>
+
+    {{ params_form.deadline.label_tag }}
+    {{ params_form.deadline }}
+
+    <div class="notice">
+        <p>Минимальный срок выполнения — 24 часа</p>
+    </div>
+</div>
+{% endblock %}

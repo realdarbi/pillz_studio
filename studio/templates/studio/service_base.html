@@ -1,0 +1,29 @@
+﻿{% extends 'studio/base.html' %}
+
+{% block content %}
+<div class="service-container">
+    <h2>{{ service.name }}</h2>
+    <p class="description">{{ service.description }}</p>
+
+    <div class="price-info">
+        <span>От {{ service.min_price }} руб.</span>
+        <span>Срок: {{ service.duration }}</span>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="service-form">
+        {% csrf_token %}
+
+        <div class="form-section">
+            <h3>Основная информация</h3>
+            {{ service_form.as_p }}
+        </div>
+
+        <div class="form-section">
+            <h3>Параметры услуги</h3>
+            {% block service_params %}{% endblock %}
+        </div>
+
+        <button type="submit" class="btn-submit">Отправить заявку</button>
+    </form>
+</div>
+{% endblock %}

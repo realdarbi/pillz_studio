@@ -1,0 +1,35 @@
+﻿{% extends 'studio/service_base.html' %}
+
+{% block service_params %}
+<div class="instrumental-params">
+    <div class="upload-group">
+        {{ params_form.references.label_tag }}
+        {{ params_form.references }}
+        <small>Загрузите аудиофайлы (MP3, WAV)</small>
+    </div>
+
+    <div class="options">
+        <label class="option-checkbox">
+            {{ params_form.remake_beat }}
+            <span>{{ params_form.remake_beat.label }}</span>
+        </label>
+    </div>
+
+    {{ params_form.deadline.label_tag }}
+    {{ params_form.deadline }}
+</div>
+
+<script>
+// Логика расчета цены для инструментала
+document.addEventListener('DOMContentLoaded', function() {
+    const beatCheckbox = document.querySelector('#id_remake_beat');
+
+    beatCheckbox.addEventListener('change', function() {
+        const basePrice = {{ service.min_price }};
+        const priceElement = document.querySelector('.price-display');
+        const newPrice = this.checked ? basePrice + 1000 : basePrice;
+        priceElement.textContent = `Примерная цена: ${newPrice} руб.`;
+    });
+});
+</script>
+{% endblock %}

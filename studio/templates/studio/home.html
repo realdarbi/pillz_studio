@@ -1,18 +1,106 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-    <title>{% block title %}Студия звукозаписи{% endblock %}</title>
-</head>
-<body>
-    <h1>{% block heading %}{% endblock %}</h1>
-    <ul>
-        {% for service in services %}
-        <li>
-            <a href="{% url 'service_detail' service.pk %}">
-                {{ service.name }} ({{ service.min_price }} руб.)
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+﻿{% extends 'studio/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .services-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .service-card {
+        background: #1a1a1a;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-left: 5px solid #00c2cb;
+        cursor: pointer; /* Добавляем указатель при наведении */
+        text-decoration: none; /* Убираем подчеркивание */
+        color: inherit; /* Наследуем цвет текста */
+    }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 194, 203, 0.3);
+        }
+
+    .service-info {
+        flex: 1;
+    }
+
+    .service-name {
+        color: #ffffff;
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .service-price {
+        color: #00c2cb;
+        font-size: 16px;
+    }
+
+    .service-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 10px;
+        object-fit: cover;
+        margin-left: 20px;
+        border: 2px solid #7b2cbf;
+    }
+
+    .heading {
+        color: #ffffff;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 32px;
+        position: relative;
+    }
+
+        .heading:after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 3px;
+            background: #7b2cbf;
+            margin: 15px auto 0;
+        }
+
+    /* Новый стиль для обертки ссылки */
+    .service-link {
+        display: block;
+        text-decoration: none;
+    }
+</style>
+
+<div class="services-container">
+    <h1 class="heading">Наши услуги</h1>
+
+    {% for service in services %}
+    <a href="{% url 'service_detail' service.pk %}" class="service-link">
+        <div class="service-card">
+            <div class="service-info">
+                <h3 class="service-name">{{ service.name }}</h3>
+                <p class="service-price">от {{ service.min_price }} ₽</p>
+            </div>
+            <img src="{% static 'studio/images/service-'|add:service.category|add:'.jpg' %}"
+                 alt="{{ service.name }}"
+                 class="service-image">
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<script>
+    // Добавляем случайный оттенок фиолетового для карточек
+    document.querySelectorAll('.service-card').forEach(card => {
+        const hue = 270 + Math.floor(Math.random() * 30) - 15;
+        card.style.borderLeftColor = `hsl(${hue}, 80%, 60%)`;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+﻿{% extends 'studio/service_base.html' %}
+
+{% block service_params %}
+<div class="full-song-params">
+    <div class="upload-group">
+        {{ params_form.references.label_tag }}
+        {{ params_form.references }}
+        <small>Загрузите референсы (аудио, текст, идеи)</small>
+    </div>
+
+    {{ params_form.deadline.label_tag }}
+    {{ params_form.deadline }}
+
+    <div class="price-notice">
+        <p>Итоговая цена может измениться после обсуждения с исполнителем</p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deadlineInput = document.querySelector('#id_deadline');
+    const priceElement = document.querySelector('.price-display');
+    const basePrice = {{ service.min_price }};
+
+    deadlineInput.addEventListener('change', function() {
+        const deadline = new Date(this.value);
+        const now = new Date();
+        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+
+        let price = basePrice;
+        if (daysLeft < 3) {
+            price += 2000; // Срочный заказ
+        }
+
+        priceElement.textContent = `Примерная цена: ${price} руб.`;
+    });
+});
+</script>
+{% endblock %}

@@ -2,12 +2,396 @@
 {% load static %}
 
 {% block content %}
+<style>
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+        color: #fff;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .profile-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 40px;
+        background: #1a1a1a;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-left: 5px solid #7b2cbf;
+    }
+
+    .profile-info {
+        flex: 1;
+        min-width: 300px;
+    }
+
+        .profile-info h1 {
+            font-size: 2.2rem;
+            margin: 0 0 10px;
+            color: #00c2cb;
+        }
+
+    .profile-email, .profile-phone {
+        color: #aaa;
+        margin: 5px 0;
+        font-size: 1.1rem;
+    }
+
+    .avatar-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .avatar-wrapper {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid #00c2cb;
+        box-shadow: 0 5px 20px rgba(0, 194, 203, 0.3);
+        margin-bottom: 20px;
+    }
+
+    .avatar, .avatar-placeholder img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .file-upload-label {
+        background: #7b2cbf;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.3s;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+        .file-upload-label:hover {
+            background: #6a1bb0;
+            transform: translateY(-2px);
+        }
+
+        .file-upload-label input {
+            display: none;
+        }
+
+    .file-name {
+        display: block;
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #7b2cbf 0%, #00c2cb 100%);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(123, 44, 191, 0.4);
+        }
+
+    .profile-content {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .section-header h2 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: #00c2cb;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+            .section-header h2:after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 60px;
+                height: 3px;
+                background: #7b2cbf;
+            }
+
+    .btn-filter {
+        background: #2a2a2a;
+        color: #ddd;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+
+        .btn-filter.active {
+            background: #7b2cbf;
+            color: white;
+        }
+
+    .bookings-grid, .services-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .booking-card {
+        background: #1a1a1a;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s;
+        border-left: 3px solid #444;
+    }
+
+        .booking-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+    .booking-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+        .booking-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+    .booking-status {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+        .booking-status.pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .booking-status.confirmed {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+    .booking-details {
+        color: #bbb;
+        margin-bottom: 15px;
+    }
+
+        .booking-details p {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    .booking-notes {
+        font-style: italic;
+        color: #888;
+        margin-top: 10px;
+    }
+
+    .btn-cancel {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border: 1px solid #dc3545;
+        padding: 5px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-cancel:hover {
+            background: rgba(220, 53, 69, 0.3);
+        }
+
+    .service-card {
+        background: #1a1a1a;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        transition: all 0.3s;
+        border-left: 3px solid #00c2cb;
+    }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 194, 203, 0.2);
+        }
+
+    .service-info {
+        flex: 1;
+    }
+
+        .service-info h3 {
+            margin: 0 0 10px;
+            color: #fff;
+            font-size: 1.3rem;
+        }
+
+    .service-price {
+        color: #00c2cb;
+        font-weight: 600;
+        margin: 5px 0;
+    }
+
+    .service-date {
+        color: #777;
+        font-size: 0.9rem;
+        margin: 5px 0;
+    }
+
+    .service-params {
+        background: #252525;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 10px;
+        display: none;
+    }
+
+    .service-card.expanded .service-params {
+        display: block;
+    }
+
+    .service-params p {
+        margin: 5px 0;
+        color: #bbb;
+    }
+
+    .service-params strong {
+        color: #ddd;
+    }
+
+    .service-comment {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #333;
+        color: #888;
+    }
+
+    .service-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        min-width: 100px;
+    }
+
+        .service-status span {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .service-status .completed-date {
+            color: #777;
+            font-size: 0.8rem;
+        }
+
+    .pending {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+
+    .in_progress {
+        background: rgba(23, 162, 184, 0.2);
+        color: #17a2b8;
+    }
+
+    .completed {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background: #1a1a1a;
+        border-radius: 12px;
+        border: 2px dashed #333;
+    }
+
+        .empty-state img {
+            max-width: 200px;
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+
+        .empty-state p {
+            color: #777;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .service-card {
+            flex-direction: column;
+        }
+
+        .service-status {
+            align-items: flex-start;
+            margin-top: 15px;
+        }
+    }
+</style>
+
 <div class="profile-container">
     <div class="profile-header">
         <div class="profile-info">
             <h1>{{ user.username }}</h1>
             <p class="profile-email">{{ user.email }}</p>
-
             {% if user.profile.phone %}
             <p class="profile-phone">Телефон: {{ user.profile.phone }}</p>
             {% endif %}
@@ -23,17 +407,14 @@
                 </div>
                 {% endif %}
             </div>
-
             <form method="post" enctype="multipart/form-data" class="avatar-form">
                 {% csrf_token %}
-                <div class="form-group">
-                    <label for="avatar-upload" class="file-upload-label">
-                        <span>Выбрать файл</span>
-                        <input type="file" id="avatar-upload" name="avatar" accept="image/*">
-                    </label>
-                    <span class="file-name">Файл не выбран</span>
-                </div>
-                <button type="submit" class="btn btn-primary">Обновить аватар</button>
+                <label for="avatar-upload" class="file-upload-label">
+                    <span>Выбрать новый аватар</span>
+                    <input type="file" id="avatar-upload" name="avatar" accept="image/*">
+                </label>
+                <span class="file-name">Файл не выбран</span>
+                <button type="submit" class="btn-primary">Обновить</button>
             </form>
         </div>
     </div>
@@ -43,9 +424,9 @@
             <div class="section-header">
                 <h2>Мои записи</h2>
                 <div class="section-actions">
-                    <button class="btn btn-filter active" data-filter="all">Все</button>
-                    <button class="btn btn-filter" data-filter="pending">Ожидают</button>
-                    <button class="btn btn-filter" data-filter="confirmed">Подтверждены</button>
+                    <button class="btn-filter active" data-filter="all">Все</button>
+                    <button class="btn-filter" data-filter="pending">Ожидают</button>
+                    <button class="btn-filter" data-filter="confirmed">Подтверждены</button>
                 </div>
             </div>
 
@@ -70,7 +451,7 @@
 
                     <div class="booking-actions">
                         {% if booking.status == 'pending' %}
-                        <button class="btn btn-cancel">Отменить</button>
+                        <button class="btn-cancel">Отменить запись</button>
                         {% endif %}
                     </div>
                 </div>
@@ -79,27 +460,48 @@
             {% else %}
             <div class="empty-state">
                 <img src="{% static 'studio/images/no-bookings.svg' %}" alt="Нет записей">
-                <p>У вас пока нет записей</p>
-                <a href="{% url 'services' %}" class="btn btn-primary">Записаться</a>
+                <p>У вас пока нет активных записей</p>
+                <a href="{% url 'services' %}" class="btn-primary">Записаться на услугу</a>
             </div>
             {% endif %}
         </section>
 
         <section class="services-section">
-            <h2>История услуг</h2>
+            <h2>История заказов</h2>
             {% if services %}
             <div class="services-list">
-                {% for service in services %}
+                {% for item in services %}
                 <div class="service-card">
                     <div class="service-info">
-                        <h3>{{ service.service_type.name }}</h3>
-                        <p class="service-date">Заказано: {{ service.date_ordered|date:"d.m.Y" }}</p>
-                        {% if service.date_completed %}
-                        <p class="service-completed">Завершено: {{ service.date_completed|date:"d.m.Y" }}</p>
+                        <h3>{{ item.service.service_type.name }}</h3>
+                        <p class="service-price">{{ item.service.price }} руб.</p>
+                        <p class="service-date">Заказано: {{ item.service.date_ordered|date:"d.m.Y H:i" }}</p>
+
+                        <div class="service-params">
+                            {% if item.service.service_type.category == 'recording' and item.params %}
+                            <p><strong>Тип записи:</strong> {{ item.params.get_recording_type_display }}</p>
+                            <p><strong>Часов:</strong> {{ item.params.hours }}</p>
+                            <p><strong>Звукоинженер:</strong> {% if item.params.sound_engineer %}Да{% else %}Нет{% endif %}</p>
+                            {% elif item.service.service_type.category == 'mixing' and item.params %}
+                            <p><strong>Экспресс:</strong> {% if item.params.express %}Да{% else %}Нет{% endif %}</p>
+                            <p><strong>Мастеринг:</strong> {% if item.params.mastering %}Да{% else %}Нет{% endif %}</p>
+                            {% endif %}
+                        </div>
+
+                        {% if item.service.comment %}
+                        <div class="service-comment">
+                            <p><strong>Комментарий:</strong> {{ item.service.comment }}</p>
+                        </div>
                         {% endif %}
                     </div>
-                    <div class="service-status {{ service.status }}">
-                        {{ service.get_status_display }}
+
+                    <div class="service-status {{ item.service.status }}">
+                        <span>{{ item.service.get_status_display }}</span>
+                        {% if item.service.status == 'completed' and item.service.date_completed %}
+                        <p class="completed-date">
+                            {{ item.service.date_completed|date:"d.m.Y" }}
+                        </p>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -108,6 +510,7 @@
             <div class="empty-state">
                 <img src="{% static 'studio/images/no-services.svg' %}" alt="Нет услуг">
                 <p>Вы еще не заказывали услуги</p>
+                <a href="{% url 'services' %}" class="btn-primary">Посмотреть услуги</a>
             </div>
             {% endif %}
         </section>
@@ -116,41 +519,42 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Фильтрация записей
-    const filterButtons = document.querySelectorAll('.btn-filter');
-    filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const filter = this.dataset.filter;
+    document.addEventListener('DOMContentLoaded', function () {
+        // Фильтрация записей
+        const filterButtons = document.querySelectorAll('.btn-filter');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const filter = this.dataset.filter;
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
 
-            // Обновляем активную кнопку
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
+                const bookings = document.querySelectorAll('.booking-card');
+                bookings.forEach(booking => {
+                    if (filter === 'all' || booking.dataset.status === filter) {
+                        booking.style.display = 'flex';
+                    } else {
+                        booking.style.display = 'none';
+                    }
+                });
+            });
+        });
 
-            // Фильтруем записи
-            const bookings = document.querySelectorAll('.booking-card');
-            bookings.forEach(booking => {
-                if (filter === 'all' || booking.dataset.status === filter) {
-                    booking.style.display = 'block';
-                } else {
-                    booking.style.display = 'none';
+        // Отображение имени файла аватара
+        const fileInput = document.getElementById('avatar-upload');
+        const fileName = document.querySelector('.file-name');
+        fileInput.addEventListener('change', function () {
+            fileName.textContent = this.files.length > 0 ? this.files[0].name : 'Файл не выбран';
+        });
+
+        // Раскрытие деталей услуги
+        document.querySelectorAll('.service-card').forEach(card => {
+            card.addEventListener('click', function (e) {
+                if (!e.target.closest('.service-status') && !e.target.closest('.btn-cancel')) {
+                    this.classList.toggle('expanded');
                 }
             });
         });
     });
-
-    // Отображение имени файла аватара
-    const fileInput = document.getElementById('avatar-upload');
-    const fileName = document.querySelector('.file-name');
-
-    fileInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-            fileName.textContent = this.files[0].name;
-        } else {
-            fileName.textContent = 'Файл не выбран';
-        }
-    });
-});
 </script>
 {% endblock %}
 {% endblock %}
