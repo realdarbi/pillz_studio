@@ -1,0 +1,18 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Студия звукозаписи{% endblock %}</title>
+</head>
+<body>
+    <h1>{% block heading %}{% endblock %}</h1>
+    <ul>
+        {% for service in services %}
+        <li>
+            <a href="{% url 'service_detail' service.pk %}">
+                {{ service.name }} ({{ service.min_price }} руб.)
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

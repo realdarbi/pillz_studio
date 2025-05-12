@@ -1,0 +1,156 @@
+﻿{% extends 'studio/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-info">
+            <h1>{{ user.username }}</h1>
+            <p class="profile-email">{{ user.email }}</p>
+
+            {% if user.profile.phone %}
+            <p class="profile-phone">Телефон: {{ user.profile.phone }}</p>
+            {% endif %}
+        </div>
+
+        <div class="avatar-section">
+            <div class="avatar-wrapper">
+                {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="avatar">
+                {% else %}
+                <div class="avatar-placeholder">
+                    <img src="{% static 'studio/images/default-avatar.png' %}" alt="Аватар по умолчанию">
+                </div>
+                {% endif %}
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="avatar-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="avatar-upload" class="file-upload-label">
+                        <span>Выбрать файл</span>
+                        <input type="file" id="avatar-upload" name="avatar" accept="image/*">
+                    </label>
+                    <span class="file-name">Файл не выбран</span>
+                </div>
+                <button type="submit" class="btn btn-primary">Обновить аватар</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="profile-content">
+        <section class="bookings-section">
+            <div class="section-header">
+                <h2>Мои записи</h2>
+                <div class="section-actions">
+                    <button class="btn btn-filter active" data-filter="all">Все</button>
+                    <button class="btn btn-filter" data-filter="pending">Ожидают</button>
+                    <button class="btn btn-filter" data-filter="confirmed">Подтверждены</button>
+                </div>
+            </div>
+
+            {% if bookings %}
+            <div class="bookings-grid">
+                {% for booking in bookings %}
+                <div class="booking-card" data-status="{{ booking.status }}">
+                    <div class="booking-header">
+                        <h3>{{ booking.service_type.name }}</h3>
+                        <span class="booking-status {{ booking.status }}">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="booking-details">
+                        <p><i class="far fa-calendar-alt"></i> {{ booking.date|date:"d.m.Y" }}</p>
+                        <p><i class="far fa-clock"></i> {{ booking.date|date:"H:i" }}</p>
+                        {% if booking.notes %}
+                        <p class="booking-notes">{{ booking.notes }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="booking-actions">
+                        {% if booking.status == 'pending' %}
+                        <button class="btn btn-cancel">Отменить</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <img src="{% static 'studio/images/no-bookings.svg' %}" alt="Нет записей">
+                <p>У вас пока нет записей</p>
+                <a href="{% url 'services' %}" class="btn btn-primary">Записаться</a>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="services-section">
+            <h2>История услуг</h2>
+            {% if services %}
+            <div class="services-list">
+                {% for service in services %}
+                <div class="service-card">
+                    <div class="service-info">
+                        <h3>{{ service.service_type.name }}</h3>
+                        <p class="service-date">Заказано: {{ service.date_ordered|date:"d.m.Y" }}</p>
+                        {% if service.date_completed %}
+                        <p class="service-completed">Завершено: {{ service.date_completed|date:"d.m.Y" }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="service-status {{ service.status }}">
+                        {{ service.get_status_display }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <img src="{% static 'studio/images/no-services.svg' %}" alt="Нет услуг">
+                <p>Вы еще не заказывали услуги</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Фильтрация записей
+    const filterButtons = document.querySelectorAll('.btn-filter');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+
+            // Обновляем активную кнопку
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Фильтруем записи
+            const bookings = document.querySelectorAll('.booking-card');
+            bookings.forEach(booking => {
+                if (filter === 'all' || booking.dataset.status === filter) {
+                    booking.style.display = 'block';
+                } else {
+                    booking.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Отображение имени файла аватара
+    const fileInput = document.getElementById('avatar-upload');
+    const fileName = document.querySelector('.file-name');
+
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            fileName.textContent = this.files[0].name;
+        } else {
+            fileName.textContent = 'Файл не выбран';
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,56 @@
+﻿{% extends 'studio/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="service-detail">
+    <div class="service-info">
+        <h1>{{ service.name }}</h1>
+        <p class="description">{{ service.description }}</p>
+        <div class="service-meta">
+            <span class="price">Цена от: {{ service.min_price }} руб.</span>
+            <span class="duration">Длительность: {{ service.duration }}</span>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="booking-form">
+        <h2>Записаться</h2>
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_date">Дата записи:</label>
+                <input type="date" id="id_date" name="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="id_notes">Дополнительная информация:</label>
+                <textarea id="id_notes" name="notes" rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">Подтвердить запись</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="auth-required">
+        <p><a href="{% url 'login' %}">Войдите</a>, чтобы записаться на услугу</p>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateInput = document.getElementById('id_date');
+        if (dateInput) {
+            // Устанавливаем минимальную дату - сегодня
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            dateInput.min = `${yyyy}-${mm}-${dd}`;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

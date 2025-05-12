@@ -1,0 +1,53 @@
+﻿{% load static %}
+<div class="login-card" id="login-card">
+    <div class="login-header">
+        <img src="{% static 'studio/images/logo.png' %}" alt="Логотип" class="login-logo">
+        <h1 align="center">Вход</h1>
+    </div>
+
+    <form method="post" action="{% url 'login' %}" class="login-form" align="center" id="login-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="username"><i class="fas fa-user"></i> Логин</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Пароль</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <button type="submit" class="login-btn">Войти</button>
+
+        <div class="login-links">
+            <a href="#" class="switch-form" data-target="register">Нет аккаунта? Зарегистрируйтесь</a>
+            <a href="#">Забыли пароль?</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Анимация появления
+        $('#login-card').css({
+            'opacity': '0',
+            'transform': 'translateY(20px)'
+        });
+
+        setTimeout(() => {
+            $('#login-card').css({
+                'transition': 'all 0.5s ease',
+                'opacity': '1',
+                'transform': 'translateY(0)'
+            });
+        }, 100);
+
+        // Подсветка активного поля
+        $('input').on('focus', function () {
+            $(this).parent().find('label').css('color', 'var(--secondary)');
+        }).on('blur', function () {
+            $(this).parent().find('label').css('color', 'var(--text)');
+        });
+    });
+</script>

@@ -1,0 +1,104 @@
+﻿{% extends 'studio/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'studio/css/auth.css' %}">
+<style>
+    #register-card {
+        width: 100% !important;
+        max-width: 450px !important;
+        margin: 0 auto !important;
+    }
+
+    .auth-form {
+        padding: 40px 30px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="auth-form-container" id="auth-container">
+        {% include 'studio/register_form.html' %}
+        <div class="login-card" id="register-card">
+            <div class="login-header">
+                <img src="{% static 'studio/images/logo.png' %}" alt="Логотип" class="login-logo">
+                <h1>Регистрация</h1>
+            </div>
+
+            <form method="post" class="auth-form" id="register-form" align="center">
+                {% csrf_token %}
+
+                <!-- Поля формы остаются без изменений -->
+                <!-- ... -->
+
+                <button type="submit" class="submit-btn">
+                    <span class="btn-text">Зарегистрироваться</span>
+                    <span class="loading-spinner" style="display:none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </span>
+                </button>
+
+                <div class="auth-links">
+                    Уже есть аккаунт? <a href="#" class="switch-form" data-target="login">Войти</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    src="https://code.jquery.com/jquery-3.6.0.min.js">
+    src="{% static 'studio/js/auth.js' %}">
+    $(document).ready(function () {
+        // Инициализация анимации
+        $('#register-card').hide().fadeIn(500);
+
+        // Обработка формы регистрации
+        $('#register-form').on('submit', function (e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $btn = $form.find('.submit-btn');
+
+            // Показываем индикатор загрузки
+            $btn.find('.btn-text').hide();
+            $btn.find('.loading-spinner').show();
+            $btn.prop('disabled', true);
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'register' %}",
+                data: $form.serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Перенаправляем при успешной регистрации
+                        window.location.href = response.redirect_url;
+                    } else if (response.html) {
+                        // Обновляем форму с ошибками
+                        $('#register-card').replaceWith(response.html);
+                    }
+                },
+                error: function (xhr) {
+                    alert('Ошибка сервера: ' + (xhr.responseJSON?.error || 'Попробуйте позже'));
+                },
+                complete: function () {
+                    $btn.find('.btn-text').show();
+                    $btn.find('.loading-spinner').hide();
+                    $btn.prop('disabled', false);
+                }
+            });
+        });
+
+        // Обработчик переключения на форму входа
+        $(document).on('click', '.switch-form[data-target="login"]', function (e) {
+            e.preventDefault();
+            window.location.href = "{% url 'login' %}";
+        });
+    });
+</script>
+{% endblock %}

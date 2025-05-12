@@ -1,0 +1,137 @@
+﻿{% load static %}
+<div class="login-card" id="register-card">
+    <div class="login-header">
+        <img src="{% static 'studio/images/logo.png' %}" alt="Логотип" class="login-logo">
+        <h1>Регистрация</h1>
+    </div>
+
+    {% if form.errors %}
+    <div class="form-errors">
+        <div class="error-alert">
+            <i class="fas fa-exclamation-circle"></i>
+            <div class="error-messages">
+                {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <div class="error-message">{{ error }}</div>
+                {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="post" class="auth-form" id="register-form">
+        {% csrf_token %}
+
+        <div class="form-group {% if form.username.errors %}has-error{% endif %}">
+            <label for="id_username"><i class="fas fa-user"></i> Логин</label>
+            <input type="text" name="username" id="id_username" required
+                   class="{% if form.username.errors %}error-field{% endif %}"
+                   value="{{ form.username.value|default:'' }}">
+            {% if form.username.errors %}
+            <div class="field-error">
+                <i class="fas fa-exclamation"></i>
+                <span>{{ form.username.errors.0 }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group {% if form.email.errors %}has-error{% endif %}">
+            <label for="id_email"><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" id="id_email" required
+                   class="{% if form.email.errors %}error-field{% endif %}"
+                   value="{{ form.email.value|default:'' }}">
+            {% if form.email.errors %}
+            <div class="field-error">
+                <i class="fas fa-exclamation"></i>
+                <span>{{ form.email.errors.0 }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group {% if form.password1.errors %}has-error{% endif %}">
+            <label for="id_password1"><i class="fas fa-lock"></i> Пароль</label>
+            <input type="password" name="password1" id="id_password1" required
+                   class="{% if form.password1.errors %}error-field{% endif %}">
+            {% if form.password1.errors %}
+            <div class="field-error">
+                <i class="fas fa-exclamation"></i>
+                <span>{{ form.password1.errors.0 }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group {% if form.password2.errors %}has-error{% endif %}">
+            <label for="id_password2"><i class="fas fa-lock"></i> Подтверждение пароля</label>
+            <input type="password" name="password2" id="id_password2" required
+                   class="{% if form.password2.errors %}error-field{% endif %}">
+            {% if form.password2.errors %}
+            <div class="field-error">
+                <i class="fas fa-exclamation"></i>
+                <span>{{ form.password2.errors.0 }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="submit-btn">
+            <span class="btn-text">Зарегистрироваться</span>
+            <span class="loading-spinner" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+            </span>
+        </button>
+
+        <div class="auth-links">
+            Уже есть аккаунт? <a href="{% url 'login' %}" class="switch-form">Войти</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Обработчик отправки формы
+        $('#register-form').on('submit', function (e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $btn = $form.find('.submit-btn');
+
+            // Показываем индикатор загрузки
+            $btn.prop('disabled', true);
+            $btn.find('.btn-text').hide();
+            $btn.find('.loading-spinner').show();
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'register' %}",
+                data: $form.serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        // Обновляем всю форму с ошибками
+                        $('#register-card').replaceWith(response.html);
+
+                        // Плавное появление ошибок
+                        $('.form-errors').hide().fadeIn(300);
+                        $('.error-field').each(function () {
+                            $(this).parent().addClass('has-error');
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    alert('Ошибка сервера. Пожалуйста, попробуйте позже.');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false);
+                    $btn.find('.btn-text').show();
+                    $btn.find('.loading-spinner').hide();
+                }
+            });
+        });
+
+        // Сбрасываем ошибки при вводе
+        $('input').on('input', function () {
+            $(this).removeClass('error-field');
+            $(this).parent().removeClass('has-error');
+        });
+    });
+</script>

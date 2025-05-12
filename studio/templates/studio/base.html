@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pillz Studio | Студия звукозаписи{% endblock %}</title>
+    {% load static %}
+
+    <!-- Подключение шрифтов -->
+    <link href="https://fonts.cdnfonts.com/css/stora" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Иконки Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Основные стили -->
+    <link rel="stylesheet" href="{% static 'studio/css/style.css' %}">
+
+    <!-- Дополнительные стили для страниц -->
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        /* Глобальные фоновые эффекты */
+        body {
+            background: var(--dark);
+            min-height: 100vh;
+        }
+
+        /* Эффект для всех "таблеток" на сайте */
+        .pill-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+            .pill-effect::after {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient( ellipse at center, rgba(187, 134, 252, 0.05) 0%, transparent 70% );
+                z-index: -1;
+                pointer-events: none;
+            }
+    </style>
+</head>
+<body>
+    <header class="header pill-effect">
+        <div class="container">
+            <nav class="navbar">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-pills"></i>
+                    <span>Pillz Studio</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link"><i class="fas fa-home"></i> Главная</a>
+
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}" class="nav-link"><i class="fas fa-user"></i> Профиль</a>
+                    <form action="{% url 'logout' %}" method="post" class="logout-form">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-button">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="nav-link"><i class="fas fa-sign-in-alt"></i> Войти</a>
+                    <a href="{% url 'register' %}" class="nav-link register-btn"><i class="fas fa-user-plus"></i> Регистрация</a>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} pill-effect">
+                    {{ message }}
+                    <button class="close-btn">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}
+            <!-- Контент страниц -->
+            {% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer pill-effect">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-pills"></i>
+                    <span>Pillz Studio</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-vk"></i></a>
+                    <a href="#"><i class="fab fa-telegram"></i></a>
+                </div>
+            </div>
+            <p class="copyright">© {% now "Y" %} Студия звукозаписи. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <!-- Блок для дополнительных скриптов -->
+    {% block extra_js %}
+    <script>
+        // Закрытие уведомлений
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('.alert').remove();
+            });
+        });
+
+        // Плавное появление элементов с классом pill-effect
+        document.querySelectorAll('.pill-effect').forEach((el, index) => {
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, 100 * index);
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>
