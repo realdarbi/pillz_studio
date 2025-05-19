@@ -1,39 +1,191 @@
 ﻿{% extends 'studio/service_base.html' %}
+{% load static %}
 
 {% block service_params %}
-<div class="full-song-params">
-    <div class="upload-group">
-        {{ params_form.references.label_tag }}
-        {{ params_form.references }}
-        <small>Загрузите референсы (аудио, текст, идеи)</small>
-    </div>
-
-    {{ params_form.deadline.label_tag }}
-    {{ params_form.deadline }}
-
-    <div class="price-notice">
-        <p>Итоговая цена может измениться после обсуждения с исполнителем</p>
+<div class="param-group">
+    <label for="{{ params_form.references.id_for_label }}" class="param-label">Референсы (MP3, WAV, TXT, PDF)</label>
+    <div class="file-upload-wrapper">
+        <input type="file" name="references" id="id_references" class="param-control" accept=".mp3,.wav,.txt,.pdf" multiple>
+        <small class="file-hint">Добавьте аудиофайлы, тексты или идеи (до 10 файлов)</small>
+        <div class="file-error" id="ref-error" style="color: #ff6b6b; font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
     </div>
 </div>
 
+<div class="param-group">
+    <label for="{{ params_form.deadline.id_for_label }}" class="param-label">Желаемый срок выполнения</label>
+    <input type="text" id="id_deadline" name="deadline" class="param-control datetime-input" placeholder="Выберите дату и время" readonly>
+    <small class="deadline-hint">Минимальный срок выполнения - 3 дня</small>
+</div>
+
+<div class="form-section">
+    <h3>Дополнительные параметры</h3>
+    <div class="checkbox-container">
+        <label class="checkbox-option">
+            <input type="checkbox" class="checkbox-input" name="urgent" id="id_urgent">
+            <span class="checkmark"></span>
+            <span>Срочный заказ (+30% к стоимости)</span>
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block service_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const deadlineInput = document.querySelector('#id_deadline');
-    const priceElement = document.querySelector('.price-display');
-    const basePrice = {{ service.min_price }};
+    document.addEventListener('DOMContentLoaded', function () {
+        // Валидация файлов
+        const refInput = document.getElementById('id_references');
+        const refError = document.getElementById('ref-error');
+        const deadlineInput = document.getElementById('id_deadline');
+        const urgentCheckbox = document.getElementById('id_urgent');
+        const priceDisplay = document.getElementById('calculatedPrice');
+        const basePrice = {{ service.min_price }};
 
-    deadlineInput.addEventListener('change', function() {
-        const deadline = new Date(this.value);
-        const now = new Date();
-        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+        // Обновление цены
+        function updatePrice() {
+            let price = basePrice;
 
-        let price = basePrice;
-        if (daysLeft < 3) {
-            price += 2000; // Срочный заказ
+            // Проверка срочности
+            if (urgentCheckbox.checked) {
+                price = Math.round(price * 1.3);
+            }
+
+            // Проверка дедлайна
+            if (deadlineInput.value) {
+                const deadline = new Date(deadlineInput.value);
+                const now = new Date();
+                const minDeadline = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // +3 дня
+
+                if (deadline < minDeadline && !urgentCheckbox.checked) {
+                    urgentCheckbox.checked = true;
+                    price = Math.round(price * 1.3);
+                }
+            }
+
+            priceDisplay.textContent = price;
         }
 
-        priceElement.textContent = `Примерная цена: ${price} руб.`;
+        // Проверка расширения файла
+        function isValidExtension(file, allowedExtensions) {
+            const fileName = file.name.toLowerCase();
+            return allowedExtensions.some(ext => fileName.endsWith(ext));
+        }
+
+        // Валидация файлов
+        refInput.addEventListener('change', function () {
+            refError.style.display = 'none';
+
+            if (this.files.length > 0) {
+                const allowed = ['.mp3', '.wav', '.txt', '.pdf'];
+                let validFiles = [];
+                let invalidFiles = [];
+
+                // Проверяем каждый файл
+                Array.from(this.files).forEach(file => {
+                    if (isValidExtension(file, allowed)) {
+                        validFiles.push(file);
+                    } else {
+                        invalidFiles.push(file.name);
+                    }
+                });
+
+                // Ошибка если есть недопустимые файлы
+                if (invalidFiles.length > 0) {
+                    refError.textContent = `Недопустимые форматы: ${invalidFiles.join(', ')}. Разрешены MP3, WAV, TXT, PDF`;
+                    refError.style.display = 'block';
+
+                    // Создаем новый DataTransfer с только валидными файлами
+                    const dt = new DataTransfer();
+                    validFiles.forEach(file => dt.items.add(file));
+                    this.files = dt.files;
+                }
+
+                // Ошибка если больше 10 файлов
+                if (this.files.length > 10) {
+                    refError.textContent = 'Максимум 10 файлов';
+                    refError.style.display = 'block';
+
+                    // Оставляем только первые 10 файлов
+                    const dt = new DataTransfer();
+                    Array.from(this.files).slice(0, 10).forEach(file => dt.items.add(file));
+                    this.files = dt.files;
+                }
+            }
+        });
+
+        // Проверка дедлайна (минимум 3 дня от текущего момента)
+        deadlineInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const now = new Date();
+            const minDeadline = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // +3 дня
+
+            if (selectedDate < minDeadline) {
+                if (!confirm('Выбран срок менее 3 дней. Будет применена срочная наценка 30%. Продолжить?')) {
+                    this.value = '';
+                } else {
+                    urgentCheckbox.checked = true;
+                }
+            }
+            updatePrice();
+        });
+
+        // Обновление цены при изменении чекбокса
+        urgentCheckbox.addEventListener('change', updatePrice);
+
+        // Валидация перед отправкой формы
+        document.querySelector('form').addEventListener('submit', function (e) {
+            let isValid = true;
+
+            // Проверка дедлайна
+            if (!deadlineInput.value) {
+                alert('Пожалуйста, укажите срок выполнения');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
     });
-});
 </script>
+
+<style>
+    /* Специфичные стили для услуги "Песня под ключ" */
+    .file-upload-wrapper input[type="file"]::file-selector-button {
+        background-color: #050505;
+        color: #7b2cbf;
+        border: 1px solid #00c2cb;
+        padding: 8px 16px;
+        border-radius: 4px;
+        margin-right: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .file-upload-wrapper input[type="file"]::file-selector-button:hover {
+            background-color: #121212;
+            border-color: #7b2cbf;
+        }
+
+    .deadline-hint {
+        color: var(--teal);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: block;
+    }
+
+    .price-notice {
+        background: rgba(123, 44, 191, 0.1);
+        border-left: 3px solid var(--purple);
+        padding: 0.8rem;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        color: var(--text);
+    }
+
+    /* Адаптация календаря под минимальный срок */
+    .flatpickr-calendar .flatpickr-day.disabled {
+        color: #555 !important;
+        cursor: not-allowed;
+    }
+</style>
 {% endblock %}

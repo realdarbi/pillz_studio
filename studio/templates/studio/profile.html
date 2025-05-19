@@ -403,7 +403,7 @@
                 <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="avatar">
                 {% else %}
                 <div class="avatar-placeholder">
-                    <img src="{% static 'studio/images/default-avatar.png' %}" alt="Аватар по умолчанию">
+                    <img src="{% static 'studio/media/avatars/default-avatar.png' %}" alt="Аватар по умолчанию">
                 </div>
                 {% endif %}
             </div>
@@ -411,7 +411,7 @@
                 {% csrf_token %}
                 <label for="avatar-upload" class="file-upload-label">
                     <span>Выбрать новый аватар</span>
-                    <input type="file" id="avatar-upload" name="avatar" accept="image/*">
+                    <input type="file" id="avatar-upload" name="avatar" accept="media/*">
                 </label>
                 <span class="file-name">Файл не выбран</span>
                 <button type="submit" class="btn-primary">Обновить</button>
@@ -430,28 +430,30 @@
                 </div>
             </div>
 
-            {% if bookings %}
+            {% if active_bookings %}
             <div class="bookings-grid">
-                {% for booking in bookings %}
+                {% for booking in active_bookings %}
                 <div class="booking-card" data-status="{{ booking.status }}">
                     <div class="booking-header">
-                        <h3>{{ booking.service_type.name }}</h3>
+                        <h3>{{ booking.service.name }}</h3>
                         <span class="booking-status {{ booking.status }}">
                             {{ booking.get_status_display }}
                         </span>
                     </div>
 
                     <div class="booking-details">
-                        <p><i class="far fa-calendar-alt"></i> {{ booking.date|date:"d.m.Y" }}</p>
-                        <p><i class="far fa-clock"></i> {{ booking.date|date:"H:i" }}</p>
-                        {% if booking.notes %}
-                        <p class="booking-notes">{{ booking.notes }}</p>
+                        <p><i class="far fa-calendar-alt"></i> {{ booking.created_at|date:"d.m.Y H:i" }}</p>
+                        {% if booking.deadline %}
+                        <p><i class="fas fa-clock"></i> Срок: {{ booking.deadline|date:"d.m.Y H:i" }}</p>
+                        {% endif %}
+                        {% if booking.comments %}
+                        <p class="booking-notes">{{ booking.comments }}</p>
                         {% endif %}
                     </div>
 
                     <div class="booking-actions">
                         {% if booking.status == 'pending' %}
-                        <button class="btn-cancel">Отменить запись</button>
+                        <button class="btn-cancel" data-booking-id="{{ booking.id }}">Отменить запись</button>
                         {% endif %}
                     </div>
                 </div>
@@ -459,7 +461,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <img src="{% static 'studio/images/no-bookings.svg' %}" alt="Нет записей">
+                <img src="{% static 'studio/media/no-bookings.svg' %}" alt="Нет записей">
                 <p>У вас пока нет активных записей</p>
                 <a href="{% url 'services' %}" class="btn-primary">Записаться на услугу</a>
             </div>
@@ -468,54 +470,57 @@
 
         <section class="services-section">
             <h2>История заказов</h2>
-            {% if services %}
+            {% if completed_orders %}
             <div class="services-list">
-                {% for item in services %}
+                {% for order in completed_orders %}
                 <div class="service-card">
                     <div class="service-info">
-                        <h3>{{ item.service.service_type.name }}</h3>
-                        <p class="service-price">{{ item.service.price }} руб.</p>
-                        <p class="service-date">Заказано: {{ item.service.date_ordered|date:"d.m.Y H:i" }}</p>
+                        <h3>{{ order.service.name }}</h3>
+                        <p class="service-price">{{ order.price }} руб.</p>
+                        <p class="service-date">
+                            Заказано: {{ order.created_at|date:"d.m.Y H:i" }}<br>
+                            Завершено: {{ order.completed_at|date:"d.m.Y H:i" }}
+                        </p>
 
                         <div class="service-params">
-                            {% if item.service.service_type.category == 'recording' and item.params %}
-                            <p><strong>Тип записи:</strong> {{ item.params.get_recording_type_display }}</p>
-                            <p><strong>Часов:</strong> {{ item.params.hours }}</p>
-                            <p><strong>Звукоинженер:</strong> {% if item.params.sound_engineer %}Да{% else %}Нет{% endif %}</p>
-                            {% elif item.service.service_type.category == 'mixing' and item.params %}
-                            <p><strong>Экспресс:</strong> {% if item.params.express %}Да{% else %}Нет{% endif %}</p>
-                            <p><strong>Мастеринг:</strong> {% if item.params.mastering %}Да{% else %}Нет{% endif %}</p>
+                            {% if order.service.category == 'recording' %}
+                            <p><strong>Тип записи:</strong> {{ order.get_recording_type_display }}</p>
+                            <p><strong>Часов:</strong> {{ order.hours }}</p>
+                            {% elif order.service.category == 'mixing' %}
+                            <p><strong>Экспресс:</strong> {% if order.express %}Да{% else %}Нет{% endif %}</p>
+                            <p><strong>Мастеринг:</strong> {% if order.mastering %}Да{% else %}Нет{% endif %}</p>
+                            {% elif order.service.category == 'lyrics' %}
+                            <p><strong>Тип текста:</strong> {{ order.get_text_type_display }}</p>
                             {% endif %}
                         </div>
 
-                        {% if item.service.comment %}
+                        {% if order.comments %}
                         <div class="service-comment">
-                            <p><strong>Комментарий:</strong> {{ item.service.comment }}</p>
+                            <p><strong>Комментарий:</strong> {{ order.comments }}</p>
                         </div>
                         {% endif %}
                     </div>
 
-                    <div class="service-status {{ item.service.status }}">
-                        <span>{{ item.service.get_status_display }}</span>
-                        {% if item.service.status == 'completed' and item.service.date_completed %}
+                    <div class="service-status completed">
+                        <span>Завершено</span>
                         <p class="completed-date">
-                            {{ item.service.date_completed|date:"d.m.Y" }}
+                            {{ order.completed_at|date:"d.m.Y" }}
                         </p>
-                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
             <div class="empty-state">
-                <img src="{% static 'studio/images/no-services.svg' %}" alt="Нет услуг">
-                <p>Вы еще не заказывали услуги</p>
+                <img src="{% static 'studio/media/no-services.svg' %}" alt="Нет услуг">
+                <p>Вы еще не завершили ни одного заказа</p>
                 <a href="{% url 'services' %}" class="btn-primary">Посмотреть услуги</a>
             </div>
             {% endif %}
         </section>
     </div>
 </div>
+
 
 {% block extra_js %}
 <script>
@@ -539,11 +544,31 @@
             });
         });
 
-        // Отображение имени файла аватара
-        const fileInput = document.getElementById('avatar-upload');
-        const fileName = document.querySelector('.file-name');
-        fileInput.addEventListener('change', function () {
-            fileName.textContent = this.files.length > 0 ? this.files[0].name : 'Файл не выбран';
+        // Отмена записи
+        document.querySelectorAll('.btn-cancel').forEach(button => {
+            button.addEventListener('click', async function() {
+                const bookingId = this.dataset.bookingId;
+                if (confirm('Вы уверены, что хотите отменить эту запись?')) {
+                    try {
+                        const response = await fetch(`/bookings/${bookingId}/cancel/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Ошибка при отмене записи');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Произошла ошибка');
+                    }
+                }
+            });
         });
 
         // Раскрытие деталей услуги

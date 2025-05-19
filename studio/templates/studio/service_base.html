@@ -1,29 +1,494 @@
 ﻿{% extends 'studio/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="service-container">
-    <h2>{{ service.name }}</h2>
-    <p class="description">{{ service.description }}</p>
+<style>
+    /* Добавьте эти стили в ваш существующий CSS */
+    select.param-control {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237b2cbf'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 15px;
+    }
 
-    <div class="price-info">
-        <span>От {{ service.min_price }} руб.</span>
-        <span>Срок: {{ service.duration }}</span>
+        select.param-control option {
+            background: var(--darkest) !important;
+            color: var(--purple) !important;
+        }
+
+        select.param-control:focus option:checked {
+            background: var(--purple) !important;
+            color: black !important;
+        }
+
+        /* Стили для выпадающего списка при открытии */
+        select.param-control:focus {
+            border-color: var(--purple);
+        }
+
+        /* Стили для опций при наведении */
+        select.param-control option:hover {
+            background: var(--purple) !important;
+            color: black !important;
+        }
+    :root {
+        --dark: #121212;
+        --darker: #0a0a0a;
+        --darkest: #050505;
+        --purple: #7b2cbf;
+        --teal: #00c2cb;
+        --text: #e0e0e0;
+        --text-light: #f5f5f5;
+        --border: #252525;
+    }
+
+    .service-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .service-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .service-title {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, var(--teal) 0%, var(--purple) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+        font-weight: 800;
+    }
+
+    .service-description {
+        color: var(--text);
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+
+    .price-info {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .price-tag, .duration-tag {
+        padding: 0.7rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .price-tag {
+        background: rgba(123, 44, 191, 0.2);
+        color: var(--purple);
+        border: 1px solid var(--purple);
+    }
+
+    .duration-tag {
+        background: rgba(0, 194, 203, 0.2);
+        color: var(--teal);
+        border: 1px solid var(--teal);
+    }
+
+    .service-form {
+        background: var(--darkest);
+        border-radius: 12px;
+        padding: 2.5rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .form-section {
+        margin-bottom: 2.5rem;
+        padding: 1.5rem;
+        background: var(--darker);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+
+        .form-section h3 {
+            color: var(--teal);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.7rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+    /* Общие стили для полей формы */
+    .param-group {
+        margin-bottom: 2rem;
+    }
+
+    .param-label {
+        display: block;
+        margin-bottom: 0.8rem;
+        color: var(--teal);
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .param-control {
+        width: 100%;
+        padding: 14px 18px;
+        background: var(--dark);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-light);
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+        .param-control:focus {
+            border-color: var(--teal);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 194, 203, 0.1);
+        }
+
+    /* Стили для чекбоксов (общие для всех форм) */
+    .checkbox-container {
+        margin: 1.5rem 0;
+    }
+
+    .checkbox-option {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .checkbox-input {
+        position: absolute;
+        opacity: 0;
+        height: 0;
+        width: 0;
+    }
+
+    .checkmark {
+        position: relative;
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        background: var(--dark);
+        border: 2px solid var(--teal);
+        border-radius: 4px;
+        margin-right: 12px;
+        transition: all 0.2s;
+    }
+
+    .checkbox-option:hover .checkmark {
+        background: rgba(0, 194, 203, 0.1);
+    }
+
+    .checkbox-input:checked ~ .checkmark {
+        background-color: var(--teal);
+    }
+
+        .checkbox-input:checked ~ .checkmark:after {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid var(--dark);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+    /* Стили ценника (общие для всех форм) */
+    .price-display {
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-light);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2.5rem 0;
+        border: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .price-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+        color: var(--teal);
+    }
+
+    /* Стили кнопки (общие для всех форм) */
+    .submit-btn {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, var(--purple) 0%, var(--teal) 100%);
+        color: black;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition: opacity 0.3s;
+    }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+    /* Стили для календаря (общие для всех форм) */
+    .flatpickr-calendar {
+        background: var(--darkest) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.7) !important;
+        border-radius: 8px !important;
+    }
+
+    .flatpickr-day {
+        color: var(--text) !important;
+    }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--teal) !important;
+            border-color: var(--teal) !important;
+            color: black !important;
+            font-weight: bold;
+        }
+
+        .flatpickr-day.today {
+            border-color: var(--purple) !important;
+        }
+
+        .flatpickr-day:hover {
+            background: var(--darker) !important;
+        }
+
+    .flatpickr-time {
+        border-top: 1px solid var(--border) !important;
+        background: var(--darkest) !important;
+    }
+
+        .flatpickr-time input:hover,
+        .flatpickr-time .flatpickr-am-pm:hover,
+        .flatpickr-time input:focus,
+        .flatpickr-time .flatpickr-am-pm:focus {
+            background: var(--darker) !important;
+        }
+
+    .numInputWrapper span {
+        border-color: var(--border) !important;
+    }
+
+        .numInputWrapper span.arrowUp:after {
+            border-bottom-color: var(--teal) !important;
+        }
+
+        .numInputWrapper span.arrowDown:after {
+            border-top-color: var(--teal) !important;
+        }
+
+    /* Дополнительные общие стили для flatpickr */
+    .flatpickr-month {
+        color: var(--text-light) !important;
+        fill: var(--text-light) !important;
+    }
+
+    .flatpickr-current-month .flatpickr-monthDropdown-months,
+    .flatpickr-current-month input.cur-year {
+        color: var(--text-light) !important;
+    }
+
+    .flatpickr-weekday {
+        color: var(--text) !important;
+    }
+
+    .flatpickr-monthDropdown-months {
+        background: var(--darkest) !important;
+        border-color: var(--border) !important;
+    }
+
+    .flatpickr-monthDropdown-month {
+        background: var(--darkest) !important;
+    }
+    /* Восстановленные стили для ползунка */
+    .slider-container {
+        margin-bottom: 1.5rem;
+    }
+
+    .slider-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .hours-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: #333;
+        border-radius: 3px;
+        outline: none;
+        flex-grow: 1;
+    }
+
+        .hours-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--teal);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid var(--dark);
+        }
+
+    .hours-value {
+        min-width: 30px;
+        text-align: center;
+        font-weight: bold;
+        color: var(--teal);
+        font-size: 1.1rem;
+    }
+
+    .slider-tick::after {
+        content: attr(data-value);
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.8rem;
+        color: var(--text);
+    }
+
+    /* Исправленные стили для подписи чекбоксов */
+    .checkbox-option span:not(.checkmark) {
+        color: var(--text-light); /* Белый цвет текста */
+    }
+
+    /* Дополнительные стили для выпадающих списков */
+    select.param-control {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300c2cb'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 15px;
+    }
+
+        /* Стили для выпадающего окна (select options) */
+        select.param-control option {
+            background: var(--darkest);
+            color: var(--text-light);
+        }
+</style>
+
+<div class="service-container">
+    <div class="service-header">
+        <h1 class="service-title">{{ service.name }}</h1>
+        <p class="service-description">{{ service.description }}</p>
+
+        <div class="price-info">
+            <div class="price-tag">
+                <i class="fas fa-tag"></i>
+                <span>От {{ service.min_price }} ₽</span>
+            </div>
+            <div class="duration-tag">
+                <i class="fas fa-clock"></i>
+                <span>{{ service.duration }}</span>
+            </div>
+        </div>
     </div>
 
     <form method="post" enctype="multipart/form-data" class="service-form">
         {% csrf_token %}
 
         <div class="form-section">
-            <h3>Основная информация</h3>
-            {{ service_form.as_p }}
-        </div>
-
-        <div class="form-section">
             <h3>Параметры услуги</h3>
             {% block service_params %}{% endblock %}
         </div>
 
-        <button type="submit" class="btn-submit">Отправить заявку</button>
+        <!-- Общий блок для комментариев -->
+        <div class="form-section">
+            <h3>Дополнительная информация</h3>
+            <div class="param-group">
+                <label for="{{ form.comments.id_for_label }}" class="param-label">Комментарии</label>
+                <textarea id="id_comments" name="comments" class="param-control" rows="4" placeholder="Укажите любые дополнительные пожелания или требования"></textarea>
+            </div>
+        </div>
+
+        <!-- Общий блок для загрузки файлов -->
+        {% block file_uploads %}
+        {% endblock %}
+
+        <!-- Блок с итоговой ценой -->
+        <div class="price-display">
+            <div>Итого к оплате:</div>
+            <div class="price-value"><span id="calculatedPrice">{{ service.min_price }}</span> ₽</div>
+            <div style="opacity: 0.7; font-size: 0.9rem;">Окончательная сумма может быть скорректирована</div>
+        </div>
+
+        <!-- Кнопка отправки формы -->
+        <button type="submit" class="submit-btn">
+            {% block submit_button_text %}Оформить заказ{% endblock %}
+        </button>
     </form>
 </div>
+
+<!-- Подключаем CSS flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Подключаем flatpickr в самом конце, после всех стилей -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+
+<!-- Базовый скрипт для инициализации календаря -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Инициализация flatpickr для всех полей с классом .datetime-input
+        flatpickr(".datetime-input", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today",
+            time_24hr: true,
+            locale: "ru",
+            minuteIncrement: 30,
+            disable: [
+                function (date) {
+                    return (date.getDay() === 0); // Отключаем воскресенья
+                }
+            ]
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const style = document.createElement('style');
+        style.textContent = `
+        select.param-control option {
+            background: var(--darkest) !important;
+            color: var(--purple) !important;
+        }
+        select.param-control:focus option:checked {
+            background: var(--purple) !important;
+            color: black !important;
+        }
+        select.param-control option:hover {
+            background: var(--purple) !important;
+            color: black !important;
+        }
+    `;
+        document.head.appendChild(style);
+    });
+</script>
+
+<!-- Блок для дополнительных скриптов конкретной услуги -->
+{% block service_scripts %}{% endblock %}
 {% endblock %}

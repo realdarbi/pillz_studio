@@ -88,7 +88,7 @@
                 <h3 class="service-name">{{ service.name }}</h3>
                 <p class="service-price">от {{ service.min_price }} ₽</p>
             </div>
-            <img src="{% static 'studio/images/service-'|add:service.category|add:'.jpg' %}"
+            <img src="{% static 'studio/media/service/service-'|add:service.category|add:'.jpg' %}"
                  alt="{{ service.name }}"
                  class="service-image">
         </div>

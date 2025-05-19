@@ -32,14 +32,17 @@ class ServiceType(models.Model):
 
 class Service(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'В обработке'),
+        ('pending', 'Ожидает подтверждения'),
+        ('confirmed', 'Подтвержден'),
         ('in_progress', 'В работе'),
-        ('completed', 'Завершено'),
+        ('completed', 'Завершен'),
+        ('canceled', 'Отменен'),
     ]
 
     service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
     client = models.ForeignKey(User, on_delete=models.CASCADE)
     date_ordered = models.DateTimeField(auto_now_add=True)
+    date_confirmed = models.DateTimeField(null=True, blank=True)
     date_completed = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     price = models.IntegerField()
@@ -47,6 +50,10 @@ class Service(models.Model):
 
     def __str__(self):
         return f"{self.client.username} - {self.service_type.name}"
+
+    def get_status_display(self):
+        statuses = dict(self.STATUS_CHOICES)
+        return statuses.get(self.status, self.status)
 
 # Модели для параметров услуг
 class RecordingServiceParams(models.Model):

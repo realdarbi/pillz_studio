@@ -2,155 +2,118 @@
 {% load static %}
 
 {% block service_params %}
-<style>
-    .recording-params {
-        background: #1a1a1a;
-        border-radius: 15px;
-        padding: 25px;
-        margin-top: 20px;
-        border-top: 4px solid #7b2cbf;
-    }
+<div class="param-group">
+    <label for="{{ params_form.recording_type.id_for_label }}" class="param-label">Тип записи</label>
+    {{ params_form.recording_type }}
+</div>
 
-    .form-row {
-        margin-bottom: 20px;
-    }
-
-        .form-row label {
-            display: block;
-            margin-bottom: 8px;
-            color: #00c2cb;
-            font-weight: 500;
-            font-size: 16px;
-        }
-
-    .form-control {
-        width: 100%;
-        padding: 12px 15px;
-        background: #222;
-        border: 2px solid #333;
-        border-radius: 8px;
-        color: white;
-        font-size: 16px;
-        transition: all 0.3s;
-    }
-
-        .form-control:focus {
-            border-color: #00c2cb;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 194, 203, 0.2);
-        }
-
-    select.form-control {
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300c2cb'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 20px;
-    }
-
-    .checkbox-group {
-        display: flex;
-        align-items: center;
-        margin: 15px 0;
-    }
-
-        .checkbox-group input {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
-            accent-color: #7b2cbf;
-        }
-
-        .checkbox-group label {
-            margin: 0;
-            color: white;
-            font-weight: normal;
-        }
-
-    .price-display {
-        background: #7b2cbf;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        margin: 20px 0;
-        font-weight: bold;
-        text-align: center;
-        display: none;
-    }
-
-    /* Кастомный datetime input */
-    input[type="datetime-local"] {
-        position: relative;
-    }
-
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            opacity: 0.7;
-            cursor: pointer;
-        }
-</style>
-
-<div class="recording-params">
-    <div class="form-row">
-        {{ params_form.recording_type.label_tag }}
-        {{ params_form.recording_type }}
-    </div>
-
-    <div class="form-row">
-        {{ params_form.hours.label_tag }}
-        {{ params_form.hours }}
-        <div class="checkbox-group unknown-hours">
-            {{ params_form.unknown_hours }}
-            {{ params_form.unknown_hours.label_tag }}
+<div class="param-group">
+    <label class="param-label">Продолжительность (часы)</label>
+    <div class="slider-container">
+        <div class="slider-wrapper">
+            <input type="range" min="1" max="7" value="1" class="hours-slider" id="hoursSlider">
+            <span class="hours-value" id="hoursValue">1</span>
+        </div>
+        <div class="slider-ticks">
+            {% for i in "1234567" %}
+            <div class="slider-tick" data-value="{{ i }}"></div>
+            {% endfor %}
         </div>
     </div>
-
-    <div class="checkbox-group sound-engineer">
-        {{ params_form.sound_engineer }}
-        {{ params_form.sound_engineer.label_tag }}
+    <div class="checkbox-container">
+        <label class="checkbox-option">
+            <input type="checkbox" id="id_unknown_hours" name="unknown_hours" class="checkbox-input" {% if params_form.unknown_hours.value %}checked{% endif %}>
+            <span class="checkmark"></span>
+            <span>Не уверен в продолжительности</span>
+        </label>
     </div>
+    <input type="hidden" name="hours" id="id_hours" value="1">
+</div>
 
-    <div class="form-row">
-        {{ params_form.datetime.label_tag }}
-        {{ params_form.datetime }}
-    </div>
-
-    <div class="price-display" id="priceDisplay">
-        Примерная стоимость: <span id="calculatedPrice">{{ service.min_price }}</span> ₽
+<div class="param-group">
+    <div class="checkbox-container">
+        <label class="checkbox-option">
+            <input type="checkbox" id="id_sound_engineer" name="sound_engineer" class="checkbox-input" {% if params_form.sound_engineer.value %}checked{% endif %}>
+            <span class="checkmark"></span>
+            <span>Требуется помощь звукоинженера</span>
+        </label>
     </div>
 </div>
 
+<div class="param-group">
+    <label for="{{ params_form.datetime.id_for_label }}" class="param-label">Дата и время записи</label>
+    <input type="text" id="id_datetime" name="datetime" class="param-control datetime-input" placeholder="Выберите дату и время" readonly>
+</div>
+{% endblock %}
+
+{% block submit_button_text %}Забронировать время{% endblock %}
+
+{% block service_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const basePrice = {{ service.min_price }};
-    const priceDisplay = document.getElementById('priceDisplay');
-    const calculatedPrice = document.getElementById('calculatedPrice');
-    const hoursInput = document.getElementById('id_hours');
-    const unknownCheckbox = document.getElementById('id_unknown_hours');
-    const soundEngineerCheckbox = document.getElementById('id_sound_engineer');
+    document.addEventListener('DOMContentLoaded', function () {
+        // Инициализация календаря для этой конкретной формы
+        flatpickr("#id_datetime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today",
+            time_24hr: true,
+            locale: "ru",
+            minuteIncrement: 30,
+            disable: [
+                function (date) {
+                    return (date.getDay() === 0);
+                }
+            ],
+            defaultDate: "{% if params_form.datetime.value %}{{ params_form.datetime.value|date:'Y-m-d H:i' }}{% endif %}"
+        });
 
-    function updatePrice() {
-        let price = basePrice;
-        const hours = parseInt(hoursInput.value) || 0;
+        // Логика расчета цены для записи
+        const pricing = {
+            basePrice: 600,
+            additionalHour: 500
+        };
 
-        if (!unknownCheckbox.checked && hours >= 3) {
-            price += hours * 500;
+        const elements = {
+            priceDisplay: document.getElementById('calculatedPrice'),
+            slider: document.getElementById('hoursSlider'),
+            valueDisplay: document.getElementById('hoursValue'),
+            hiddenInput: document.getElementById('id_hours'),
+            unknownCheckbox: document.getElementById('id_unknown_hours')
+        };
+
+        function updateSliderUI(value) {
+            elements.valueDisplay.textContent = value;
+            elements.hiddenInput.value = value;
         }
 
-        if (!soundEngineerCheckbox.checked) {
-            price -= 200;
+        function calculatePrice() {
+            const hours = parseInt(elements.hiddenInput.value) || 1;
+            const unknownHours = elements.unknownCheckbox.checked;
+
+            if (unknownHours) return pricing.basePrice;
+            if (hours === 1) return pricing.basePrice;
+            if (hours === 2) return pricing.basePrice * 2;
+            return pricing.additionalHour * hours;
         }
 
-        calculatedPrice.textContent = price;
-        priceDisplay.style.display = 'block';
-    }
+        function updatePriceDisplay() {
+            elements.priceDisplay.textContent = calculatePrice();
+        }
 
-    hoursInput.addEventListener('change', updatePrice);
-    unknownCheckbox.addEventListener('change', updatePrice);
-    soundEngineerCheckbox.addEventListener('change', updatePrice);
+        elements.slider.addEventListener('input', function () {
+            updateSliderUI(this.value);
+            updatePriceDisplay();
+        });
 
-    // Инициализация при загрузке
-    updatePrice();
-});
+        elements.unknownCheckbox.addEventListener('change', function () {
+            elements.slider.disabled = this.checked;
+            elements.valueDisplay.style.opacity = this.checked ? 0.5 : 1;
+            updatePriceDisplay();
+        });
+
+        // Инициализация
+        updateSliderUI(elements.slider.value);
+        updatePriceDisplay();
+    });
 </script>
 {% endblock %}

@@ -1,34 +1,288 @@
 ﻿{% extends 'studio/service_base.html' %}
+{% load static %}
 
 {% block service_params %}
-<div class="mixing-params">
-    <div class="file-uploads">
-        <div class="upload-group">
-            {{ params_form.zip_file.label_tag }}
-            {{ params_form.zip_file }}
-            <small>Загрузите архив с треками (ZIP/RAR)</small>
-        </div>
-
-        <div class="upload-group">
-            {{ params_form.references.label_tag }}
-            {{ params_form.references }}
-            <small>До 5 файлов</small>
-        </div>
+<div class="param-group">
+    <label for="{{ params_form.zip_file.id_for_label }}" class="param-label">Архив с треками (только ZIP/RAR)</label>
+    <div class="file-upload-wrapper">
+        <input type="file" name="zip_file" id="id_zip_file" class="param-control" accept=".zip,.rar" required>
+        <small class="file-hint">Прикрепите архив в формате ZIP или RAR</small>
+        <div class="file-error" id="zip-error" style="color: #ff6b6b; font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
     </div>
-
-    <div class="options">
-        <label class="option-checkbox">
-            {{ params_form.express }}
-            <span>{{ params_form.express.label }}</span>
-        </label>
-
-        <label class="option-checkbox">
-            {{ params_form.mastering }}
-            <span>{{ params_form.mastering.label }}</span>
-        </label>
-    </div>
-
-    {{ params_form.deadline.label_tag }}
-    {{ params_form.deadline }}
 </div>
+
+<div class="param-group">
+    <label for="{{ params_form.references.id_for_label }}" class="param-label">Референсы (только MP3/WAV)</label>
+    <div class="file-upload-wrapper">
+        <input type="file" name="references" id="id_references" class="param-control" accept=".mp3,.wav" multiple>
+        <small class="file-hint">Добавьте до 5 аудиофайлов в формате MP3 или WAV</small>
+        <div class="file-error" id="ref-error" style="color: #ff6b6b; font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
+    </div>
+</div>
+
+<!-- Остальная часть формы без изменений -->
+<div class="param-group">
+    <div class="checkbox-container">
+        <label class="checkbox-option">
+            <input type="checkbox" name="express" id="id_express" class="checkbox-input">
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Экспресс-сведение (быстрее, но дороже)</span>
+        </label>
+    </div>
+</div>
+
+<div class="param-group">
+    <div class="checkbox-container">
+        <label class="checkbox-option">
+            <input type="checkbox" name="mastering" id="id_mastering" class="checkbox-input">
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Добавить мастеринг</span>
+        </label>
+    </div>
+</div>
+
+<div class="param-group">
+    <label for="{{ params_form.deadline.id_for_label }}" class="param-label">Желаемый срок выполнения</label>
+    <input type="text" id="id_deadline" name="deadline" class="param-control datetime-input" placeholder="Выберите дату и время" readonly>
+    <small class="deadline-hint">Минимальный срок выполнения - 12 часов</small>
+</div>
+{% endblock %}
+
+{% block service_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // ... (остальной код календаря и расчета цены без изменений)
+
+        // Валидация файлов
+        const zipInput = document.getElementById('id_zip_file');
+        const refInput = document.getElementById('id_references');
+        const zipError = document.getElementById('zip-error');
+        const refError = document.getElementById('ref-error');
+
+        // Проверка расширения файла
+        function isValidExtension(file, allowedExtensions) {
+            const fileName = file.name.toLowerCase();
+            return allowedExtensions.some(ext => fileName.endsWith(ext));
+        }
+
+        // Валидация ZIP/RAR
+        zipInput.addEventListener('change', function () {
+            zipError.style.display = 'none';
+
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const allowed = ['.zip', '.rar'];
+
+                if (!isValidExtension(file, allowed)) {
+                    zipError.textContent = 'Ошибка: допустимы только файлы ZIP и RAR';
+                    zipError.style.display = 'block';
+                    this.value = '';
+                } else if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                    zipError.textContent = 'Ошибка: размер архива не должен превышать 100MB';
+                    zipError.style.display = 'block';
+                    this.value = '';
+                }
+            }
+        });
+
+        // Валидация аудиофайлов
+        refInput.addEventListener('change', function () {
+            refError.style.display = 'none';
+
+            if (this.files.length > 0) {
+                const allowed = ['.mp3', '.wav'];
+                let validFiles = [];
+                let invalidFiles = [];
+
+                // Проверяем каждый файл
+                Array.from(this.files).forEach(file => {
+                    if (isValidExtension(file, allowed)) {
+                        validFiles.push(file);
+                    } else {
+                        invalidFiles.push(file.name);
+                    }
+                });
+
+                // Ошибка если есть недопустимые файлы
+                if (invalidFiles.length > 0) {
+                    refError.textContent = `Недопустимые форматы: ${invalidFiles.join(', ')}. Только MP3/WAV`;
+                    refError.style.display = 'block';
+
+                    // Создаем новый DataTransfer с только валидными файлами
+                    const dt = new DataTransfer();
+                    validFiles.forEach(file => dt.items.add(file));
+                    this.files = dt.files;
+                }
+
+                // Ошибка если больше 5 файлов
+                if (this.files.length > 5) {
+                    refError.textContent = 'Максимум 5 файлов';
+                    refError.style.display = 'block';
+
+                    // Оставляем только первые 5 файлов
+                    const dt = new DataTransfer();
+                    Array.from(this.files).slice(0, 5).forEach(file => dt.items.add(file));
+                    this.files = dt.files;
+                }
+            }
+        });
+
+        // Валидация перед отправкой формы
+        document.querySelector('form').addEventListener('submit', function (e) {
+            let isValid = true;
+
+            // Проверка ZIP
+            if (zipInput.files.length === 0) {
+                zipError.textContent = 'Пожалуйста, загрузите архив';
+                zipError.style.display = 'block';
+                isValid = false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                // Прокрутка к первой ошибке
+                document.querySelector('.file-error[style*="display: block"]')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        });
+    });
+    const expressCheckbox = document.getElementById('id_express');
+    const masteringCheckbox = document.getElementById('id_mastering');
+    const priceDisplay = document.getElementById('calculatedPrice');
+
+    // Базовая цена (возьмите из вашего Django-шаблона или укажите явно)
+    const BASE_PRICE = {{ service.min_price }}; // Или просто 200, если нужно
+
+    // Цены за опции
+    const EXPRESS_PRICE = 700;
+    const MASTERING_PRICE = 500;
+
+    // Функция обновления цены
+    function updatePrice() {
+        let finalPrice = BASE_PRICE;
+
+        // Если выбран экспресс-режим, устанавливаем 700р (вне зависимости от мастеринга)
+        if (expressCheckbox.checked) {
+            finalPrice = EXPRESS_PRICE;
+        }
+        // Если не выбран экспресс, но выбран мастеринг - добавляем 500р к базовой
+        else if (masteringCheckbox.checked) {
+            finalPrice = BASE_PRICE + MASTERING_PRICE;
+        }
+
+        // Обновляем отображение цены
+        priceDisplay.textContent = finalPrice;
+    }
+
+    // Слушаем изменения чекбоксов
+    expressCheckbox.addEventListener('change', updatePrice);
+    masteringCheckbox.addEventListener('change', updatePrice);
+
+    // Инициализируем цену при загрузке
+    updatePrice();
+</script>
+
+<style>
+    /* Дополнительные стили для ошибок */
+    .file-upload-wrapper input:invalid {
+        border-color: #ff6b6b;
+    }
+
+    .file-hint {
+        transition: color 0.3s;
+    }
+
+    .file-upload-wrapper input:invalid + .file-hint {
+        color: #ff6b6b;
+    }
+
+    /* Стили для кнопки выбора файла */
+    .file-upload-wrapper input[type="file"]::file-selector-button {
+        background-color: #050505; /* Черный цвет */
+        color: #7b2cbf; /* Фиолетовый текст */
+        border: 1px solid #00c2cb; /* Рамка цвета тиффани */
+        padding: 8px 16px;
+        border-radius: 4px;
+        margin-right: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .file-upload-wrapper input[type="file"]::file-selector-button:hover {
+            background-color: #121212; /* Темный при наведении */
+            border-color: #7b2cbf; /* Фиолетовая рамка при наведении */
+        }
+
+    /* Исправленные стили для чекбоксов - скрываем оригинальные */
+    .checkbox-container {
+        margin: 1.5rem 0;
+        position: relative; /* Добавляем для позиционирования */
+    }
+
+    .checkbox-option {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        padding: 8px 0;
+        transition: all 0.2s ease;
+    }
+
+        /* Скрываем оригинальный чекбокс, но оставляем его в DOM */
+        .checkbox-option input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+    /* Наш кастомный чекбокс */
+    .checkmark {
+        position: relative;
+        display: inline-block;
+        width: 22px;
+        height: 22px;
+        background: var(--dark);
+        border: 2px solid var(--teal);
+        border-radius: 6px;
+        margin-right: 12px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    /* Стили при наведении */
+    .checkbox-option:hover .checkmark {
+        border-color: var(--purple);
+        transform: scale(1.05);
+    }
+
+    /* Стили для выбранного чекбокса */
+    .checkbox-option input[type="checkbox"]:checked + .checkmark {
+        background-color: var(--purple);
+        border-color: var(--purple);
+    }
+
+        /* Галочка в чекбоксе */
+        .checkbox-option input[type="checkbox"]:checked + .checkmark:after {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid var(--darkest);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+    /* Текст чекбокса */
+    .checkbox-option .checkbox-label {
+        color: var(--text-light);
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+</style>
 {% endblock %}
